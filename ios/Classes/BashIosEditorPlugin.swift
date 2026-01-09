@@ -19,6 +19,7 @@ public class BashIosEditorPlugin: NSObject, FlutterPlugin,EditorViewControllerDe
   }
 
 public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    config = EditorConfiguration()
     config.languageType = .english
     if call.method == "openEditor" {
         guard let args = call.arguments as? [String: Any],
@@ -27,6 +28,8 @@ public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
             result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing type or path", details: nil))
             return
         }
+        let options = args["options"] as? [String: Any]
+        applyOptions(options)
         flutterResult = result
         if type == "image" {
             openImageEditor(path:path)
@@ -40,6 +43,45 @@ public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         result(FlutterMethodNotImplemented)
     }
 }
+
+  private func applyOptions(_ options: [String: Any]?) {
+      guard let options = options else { return }
+      if let hiddenTools = options["hiddenTools"] as? [String],
+         !hiddenTools.isEmpty {
+          let hiddenSet = Set(hiddenTools.compactMap { toolType(from: $0) })
+          guard !hiddenSet.isEmpty else { return }
+          let filtered = EditorConfiguration.ToolsView.default.toolOptions.filter {
+              !hiddenSet.contains($0.type)
+          }
+          config.toolsView = .init(toolOptions: filtered)
+      }
+  }
+
+  private func toolType(from rawValue: String) -> EditorConfiguration.ToolsView.Options.`Type`? {
+      let key = rawValue.replacingOccurrences(of: "_", with: "").lowercased()
+      switch key {
+      case "time":
+          return .time
+      case "graffiti":
+          return .graffiti
+      case "chartlet", "emoji", "emojis":
+          return .chartlet
+      case "text":
+          return .text
+      case "mosaic":
+          return .mosaic
+      case "filteredit":
+          return .filterEdit
+      case "filter", "filters":
+          return .filter
+      case "music":
+          return .music
+      case "cropsize":
+          return .cropSize
+      default:
+          return nil
+      }
+  }
 
 
   func openImageEditor( path: String) {
@@ -91,5 +133,4 @@ public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
            editorViewController.dismiss(animated: true, completion: nil)
     }
 }
-
 

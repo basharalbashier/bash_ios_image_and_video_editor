@@ -11,6 +11,24 @@ A Flutter plugin that integrates the powerful iOS photo and video  editor [HXPHP
 - 🌐 Localization support
 - 📦 Easy integration with Flutter
 
+## ✅ Usage
+
+```dart
+const options = BashIosEditorOptions(
+  hiddenTools: {BashIosEditorTool.chartlet, BashIosEditorTool.filter},
+);
+
+final editor = BashIosEditorPlugin();
+final editedPath = await editor.openImageEditor(
+  imagePath,
+  options: options,
+);
+```
+
+Available tools:
+`time`, `graffiti`, `chartlet`, `text`, `mosaic`, `filterEdit`, `filter`,
+`music`, `cropSize`.
+
 
 ## 🔧 Contributing
 

@@ -64,6 +64,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
   void _onPressed() async {
     final ImagePicker picker = ImagePicker();
+    const options = BashIosEditorOptions(
+      hiddenTools: {BashIosEditorTool.text, BashIosEditorTool.filter},
+    );
     // Pick an image.
     final XFile? media = await picker.pickMultipleMedia(limit: 2).then((
       List<XFile>? value,
@@ -79,8 +82,8 @@ class _EditorScreenState extends State<EditorScreen> {
     bool isVideo = media.path.endsWith('.mp4') || media.path.endsWith('.mov');
     final path =
         isVideo
-            ? await editor.openVideoEditor(media.path)
-            : await editor.openImageEditor(media.path);
+            ? await editor.openVideoEditor(media.path, options: options)
+            : await editor.openImageEditor(media.path, options: options);
 
     if (path != null) {
       if (isVideo) {

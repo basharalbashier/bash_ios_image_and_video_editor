@@ -1,6 +1,6 @@
 name: bash_ios_editor_plugin
 description: "A Flutter plugin that integrates the powerful iOS photo and video  editor "
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/basharalbashier/bash_ios_image_and_video_editor
 
 environment:

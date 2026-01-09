@@ -1,6 +1,7 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'bash_ios_editor_plugin_method_channel.dart';
+import 'src/editor_options.dart';
 
 abstract class BashIosEditorPluginPlatform extends PlatformInterface {
   /// Constructs a BashIosEditorPluginPlatform.
@@ -24,11 +25,17 @@ abstract class BashIosEditorPluginPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> openImageEditor(String imagePath) {
+  Future<String?> openImageEditor(
+    String imagePath, {
+    BashIosEditorOptions? options,
+  }) {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<String?> openVideoEditor(String videoPath) {
+  Future<String?> openVideoEditor(
+    String videoPath, {
+    BashIosEditorOptions? options,
+  }) {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 }
