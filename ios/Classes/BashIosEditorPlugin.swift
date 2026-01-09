@@ -1,95 +1,123 @@
 import Flutter
-import HXPHPicker
 import UIKit
 
-public class BashIosEditorPlugin: NSObject, FlutterPlugin,EditorViewControllerDelegate {
-  var flutterResult: FlutterResult?
-    var editorVC: EditorViewController?
-  var config = EditorConfiguration()
-  //  self.config.languageType = .system
+public class BashIosEditorPlugin: NSObject, FlutterPlugin,FlutterStreamHandler {
 
-   var controller: UIViewController? {
-        return UIApplication.shared.delegate?.window??.rootViewController
+    public var eventSink: FlutterEventSink?
+    private var notificationObserver: NSObjectProtocol?
+    public static func register(with registrar: FlutterPluginRegistrar) {
+        let factory = EditorFactory(messenger: registrar.messenger())
+        registrar.register(factory, withId: "bash_ios_editor")
+        let channel = FlutterMethodChannel(name: "bash_ios_editor_channel", binaryMessenger: registrar.messenger())
+        let eventChannel = FlutterEventChannel(name: "bash_ios_editor_event", binaryMessenger: registrar.messenger())
+        let instance = BashIosEditorPlugin()
+        eventChannel.setStreamHandler(instance)
+        instance.notificationObserver = NotificationCenter.default.addObserver(forName: Notification.Name("VideoDurationUpdate"), object: nil, queue: .main) { notification in
+            instance.handleVideoDurationUpdate(notification)
+        }
+        channel.setMethodCallHandler { call, result in
+            switch call.method {
+            case "togglePlay":
+                NotificationCenter.default.post(name: NSNotification.Name("TogglePlayPause"), object: nil)
+                result(nil)
+                 case "play":
+                NotificationCenter.default.post(name: NSNotification.Name("play"), object: nil)
+                result(nil)
+                 case "pause":
+                NotificationCenter.default.post(name: NSNotification.Name("pause"), object: nil)
+                result(nil)
+                
+            case "toggleMute":
+                NotificationCenter.default.post(name: NSNotification.Name("ToggleMute"), object: nil)
+                result(nil)
+                
+            case "seekTo":
+                if let arguments = call.arguments as? [String: Any],
+                   let time = arguments["time"] as? Double {
+                    // Post a notification to seek to the desired time
+                    NotificationCenter.default.post(name: Notification.Name("SeekToTimeNotification"), object: time)
+                    result(nil)
+                } else {
+                    result(FlutterError(code: "INVALID_ARGUMENT", message: "Time argument missing", details: nil))
+                }
+                
+            default:
+                result(FlutterMethodNotImplemented)
+            }
+        }
     }
-  public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(
-      name: "bash_ios_editor_plugin", binaryMessenger: registrar.messenger())
-    let instance = BashIosEditorPlugin()
-    registrar.addMethodCallDelegate(instance, channel: channel)
-  }
+    
+    @objc private func handleVideoDurationUpdate(_ notification: Notification) {
+        if let eventData = notification.object as? [String: Any] {
+            self.sendEventToFlutter(event: eventData )
+        }
+    }
+    
+    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        self.eventSink = events
+        return nil
+    }
 
-public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    config.languageType = .english
-    if call.method == "openEditor" {
-        guard let args = call.arguments as? [String: Any],
-              let path = args["path"] as? String,
-              let type = args["type"] as? String else {
-            result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing type or path", details: nil))
-            return
-        }
-        flutterResult = result
-        if type == "image" {
-            openImageEditor(path:path)
-        } else if type == "video" {
-            openVideoEditor(path:path)
-        } else {
-            result(FlutterError(code: "INVALID_TYPE", message: "Unsupported media type", details: nil))
-        }
-        // result(nil)
-    } else {
-        result(FlutterMethodNotImplemented)
+    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        self.eventSink = nil
+        return nil
     }
+    public func sendEventToFlutter(event: Any ) {
+        do {
+            let result = try  eventSink?(["event": "\(event)"])
+            print("Success:", result)
+        } catch {
+            print("Error:", error)
+        }
+       
+    }
+
+
+
 }
 
 
-  func openImageEditor( path: String) {
-  
-    guard let image = UIImage(contentsOfFile: path) else {
-      print("⚠️ Failed to load image at path: \(path)")
-      return
-    }
 
 
-  
-    editorVC = EditorViewController(.init(type: .image(image)), config:self.config)
-      editorVC?.modalPresentationStyle = .fullScreen
-      editorVC?.delegate = self
-      controller?.present(editorVC!, animated: true)
-  }
-  func openVideoEditor( path: String) {
-  
-   
-
-    let videoURL = URL(fileURLWithPath: path)
 
 
-      editorVC = EditorViewController(.init(type: .video(videoURL)), config:self.config)
-        editorVC?.modalPresentationStyle = .fullScreen
-        editorVC?.delegate = self
-        controller?.present(editorVC!, animated: true)
-  }
 
-    // ✅ This gets called when editing finishes
-  public  func editorViewController(_ editorViewController: EditorViewController, didFinish asset: EditorAsset) {
 
-      let editedURL = asset.result?.url
-      flutterResult?(editedURL?.path)
-             flutterResult = nil
 
-        editorViewController.dismiss(animated: true, completion: nil)
-    }
-    public    func editorViewController(_ editorViewController: EditorViewController, didFailed  error: EditorError) {
-        print("🚨 Export failed: \(error.localizedDescription)")
-              flutterResult?(FlutterError(code: "EXPORT_FAILED", message: error.localizedDescription, details: nil))
-              flutterResult = nil
-    }
-    // ✅ This gets called when user cancels
-  public  func editorViewController(didCancel editorViewController: EditorViewController) {
-      print("❌ Editor cancelled")
-           flutterResult?(nil)
-           flutterResult = nil
-           editorViewController.dismiss(animated: true, completion: nil)
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

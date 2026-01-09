@@ -65,30 +65,39 @@ class _EditorScreenState extends State<EditorScreen> {
   void _onPressed() async {
     final ImagePicker picker = ImagePicker();
     // Pick an image.
-    final XFile? media = await picker.pickMultipleMedia(limit: 2).then((
+    final List<XFile>? media = await picker.pickMultipleMedia().then((
       List<XFile>? value,
     ) {
       if (value != null && value.isNotEmpty) {
-        return value.first;
+        return value;
       }
       return null;
     });
     if (media == null) {
       return;
     }
-    bool isVideo = media.path.endsWith('.mp4') || media.path.endsWith('.mov');
-    final path =
-        isVideo
-            ? await editor.openVideoEditor(media.path)
-            : await editor.openImageEditor(media.path);
 
-    if (path != null) {
-      if (isVideo) {
-        initPlayer(path: path);
-        return;
-      }
-      imagePath = path;
-      setState(() {});
-    }
+    await Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder:
+            (c, n, _) => Scaffold(
+              // appBar: AppBar(backgroundColor: Colors.black,),
+              backgroundColor: Colors.black,
+              body: EditorView(
+                path: media.map((toElement) => toElement.path).toList(),
+              ),
+            ),
+      ),
+    );
+
+    // if (path != null) {
+    //   if (isVideo) {
+    //     initPlayer(path: path);
+    //     return;
+    //   }
+    //   imagePath = path;
+    //   setState(() {});
+    // }
   }
 }
